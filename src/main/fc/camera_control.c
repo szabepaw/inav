@@ -179,7 +179,7 @@ bool cameraControlSendCommand(cameraControlCommand_e command)
     }
 #else
     // SITL: brak sprzętowego I2C — symuluj sukces
-    UNUSED(command);
+    (void)command;
     success = true;
 #endif
 
