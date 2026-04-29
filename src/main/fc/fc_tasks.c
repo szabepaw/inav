@@ -99,7 +99,8 @@
 
 #if defined(SITL_BUILD)
 #include "target/SITL/serial_proxy.h"
-#include "fc/camera_control.h"#endif
+#include "fc/camera_control.h"
+#endif
 
 void taskHandleSerial(timeUs_t currentTimeUs)
 {

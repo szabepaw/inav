@@ -32,12 +32,12 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
                                 PG_CAMERA_CONTROL_CONFIG, 0);
 
-pg_resetdata_decl const cameraControlConfig_t pgResetTemplate_cameraControlConfig = {
+PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig, {
     .i2cAddress  = 0x10,   // Default I2C address of SDI Shield
     .rcChannel   = 6,      // Default RC channel index (0-indexed → channel 7)
     .rcThreshold = 1700,   // Default threshold on normalised CRSF scale 1000-2000
     .debounceMs  = 200,    // Default debounce time in milliseconds
-};
+});
 
 /* ---------------------------------------------------------------------------
  * Public OSD flag — read by the OSD module to render the REC indicator.
