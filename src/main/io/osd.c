@@ -122,7 +122,8 @@
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
-#include "fc/camera_control.h"#endif
+#include "fc/camera_control.h"
+#endif
 
 #define VIDEO_BUFFER_CHARS_PAL    480
 #define VIDEO_BUFFER_CHARS_HDZERO 900
