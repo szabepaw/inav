@@ -157,7 +157,7 @@
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
-#endif
+#include "fc/camera_control.h"#endif
 
 #ifdef USE_HARDWARE_PREBOOT_SETUP
 extern void initialisePreBootHardware(void);

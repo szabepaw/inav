@@ -122,7 +122,7 @@
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
-#endif
+#include "fc/camera_control.h"#endif
 
 #define VIDEO_BUFFER_CHARS_PAL    480
 #define VIDEO_BUFFER_CHARS_HDZERO 900
@@ -260,6 +260,19 @@ bool osdIsNotMetric(void) {
  * prefixed by a a symbol to indicate the unit used.
  * @param dist Distance in centimeters
  */
+
+#ifdef USE_CAMERA_CONTROL
+static void osdElementCameraRecordIndicator(osdElementParms_t *element)
+{
+    // Feature: rc-blackmagic-camera-control
+    // Requirements: 8.1, 8.2, 8.4
+    if (cameraRecordActive) {
+        tfp_sprintf(element->buff, "REC ON");
+        element->attr = TEXT_ATTRIBUTES_NONE;
+    }
+}
+#endif
+
 static void osdFormatDistanceSymbol(char *buff, int32_t dist, uint8_t decimals, uint8_t digits)
 {
     if (digits == 0)    // Total number of digits (including decimal point)

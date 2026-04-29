@@ -4507,3 +4507,39 @@ groups:
         field: noWayHomeAction
         table: geozone_rth_no_way_home
         type: uint8_t
+
+  - name: camera_i2c_address
+    description: "I2C address of the Blackmagic SDI Shield (0x08-0x77, decimal)"
+    default_value: 16
+    field: cameraControlConfig()->i2cAddress
+    min: 8
+    max: 119
+    type: uint8_t
+    condition: USE_CAMERA_CONTROL
+
+  - name: camera_rc_channel
+    description: "RC channel (1-indexed) used to trigger camera recording"
+    default_value: 7
+    field: cameraControlConfig()->rcChannel
+    min: 1
+    max: 18
+    type: uint8_t
+    condition: USE_CAMERA_CONTROL
+
+  - name: camera_rc_threshold
+    description: "RC channel threshold (1000-2000) above which recording starts"
+    default_value: 1700
+    field: cameraControlConfig()->rcThreshold
+    min: 1000
+    max: 2000
+    type: uint16_t
+    condition: USE_CAMERA_CONTROL
+
+  - name: camera_debounce_ms
+    description: "Debounce time in milliseconds for RC channel state changes"
+    default_value: 200
+    field: cameraControlConfig()->debounceMs
+    min: 0
+    max: 1000
+    type: uint16_t
+    condition: USE_CAMERA_CONTROL

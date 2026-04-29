@@ -99,7 +99,7 @@
 
 #if defined(SITL_BUILD)
 #include "target/SITL/serial_proxy.h"
-#endif
+#include "fc/camera_control.h"#endif
 
 void taskHandleSerial(timeUs_t currentTimeUs)
 {
@@ -760,4 +760,13 @@ cfTask_t cfTasks[TASK_COUNT] = {
     },
 #endif
 
+
+#ifdef USE_CAMERA_CONTROL
+    [TASK_CAMERA_CONTROL] = {
+        .taskName        = "CAMERA CTRL",
+        .taskFunc        = cameraControlTask,
+        .desiredPeriod   = TASK_PERIOD_HZ(50),
+        .staticPriority  = TASK_PRIORITY_LOW,
+    },
+#endif
 };
