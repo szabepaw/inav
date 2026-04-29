@@ -12,11 +12,14 @@
 
 #include "camera_control.h"
 #include "common/time.h"
-#include "drivers/bus_i2c.h"
 #include "drivers/time.h"
 #include "fc/runtime_config.h"
 #include "rx/rx.h"
 #include "flight/failsafe.h"
+
+#ifndef SITL_BUILD
+#include "drivers/bus_i2c.h"
+#endif
 
 /* ---------------------------------------------------------------------------
  * I2C retry constants
@@ -170,10 +173,16 @@ bool cameraControlSendCommand(cameraControlCommand_e command)
         // Wyślij pojedynczy bajt polecenia przez I2C
         // i2cWriteBuffer(device, addr, reg, len, data, allowRawAccess)
         // reg=0xFF oznacza brak rejestru (raw access) — używamy allowRawAccess=true
+#ifndef SITL_BUILD
         if (i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0xFF, 1, &cmdByte, true)) {
             success = true;
             break;
         }
+#else
+        // SITL: brak sprzętowego I2C — symuluj sukces
+        success = true;
+        break;
+#endif
 
         state.i2cRetryCount++;
     }
