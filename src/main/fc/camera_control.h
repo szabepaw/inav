@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "platform.h"
-#include "pg/pg.h"
+#include "config/parameter_group.h"
 #include "config/parameter_group_ids.h"
 #include "common/time.h"
 

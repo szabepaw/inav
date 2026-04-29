@@ -112,8 +112,8 @@ void cameraControlTask(timeUs_t currentTimeUs)
     const timeMs_t nowMs = currentTimeUs / 1000;
 
     // Odczytaj wartość kanału RC (INAV normalizuje CRSF do 1000-2000 wewnętrznie)
-    // rcInput[] jest tablicą globalną w INAV, indeksowaną 0-based
-    const uint16_t rcValue = rcInput[config->rcChannel];
+    // W INAV 8.x używamy rxGetChannelValue() zamiast rcInput[]
+    const uint16_t rcValue = (uint16_t)rxGetChannelValue(config->rcChannel);
 
     // Wyznacz nowy stan RC na podstawie progu
     const bool newRcState = (rcValue > config->rcThreshold);
@@ -168,9 +168,9 @@ bool cameraControlSendCommand(cameraControlCommand_e command)
         }
 
         // Wyślij pojedynczy bajt polecenia przez I2C
-        // i2cWriteBuffer(device, addr, len, data)
-        // Używamy I2CDEV_1 — domyślny I2C dla zewnętrznych urządzeń na MAMBA F722
-        if (i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 1, &cmdByte)) {
+        // i2cWriteBuffer(device, addr, reg, len, data, allowRawAccess)
+        // reg=0xFF oznacza brak rejestru (raw access) — używamy allowRawAccess=true
+        if (i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0xFF, 1, &cmdByte, true)) {
             success = true;
             break;
         }
