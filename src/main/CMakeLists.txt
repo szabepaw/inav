@@ -286,6 +286,7 @@ main_sources(COMMON_SRC
     fc/fc_core.c
     fc/fc_core.h
     fc/fc_init.c
+    fc/camera_control.c
     fc/fc_init.h
     fc/fc_tasks.c
     fc/fc_tasks.h

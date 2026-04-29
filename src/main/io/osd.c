@@ -3043,6 +3043,18 @@ static bool osdDrawSingleElement(uint8_t item)
         return true;
     }
 
+
+    case OSD_CAMERA_RECORD_INDICATOR:
+    {
+        // Feature: rc-blackmagic-camera-control
+        // Requirements: 8.1, 8.2, 8.4
+        if (cameraRecordActive) {
+            tfp_sprintf(buff, "REC ON");
+            displayWriteWithAttr(osdDisplayPort, elemPosX, elemPosY, buff, TEXT_ATTRIBUTES_NONE);
+        }
+        return true;
+    }
+
 #if defined(USE_BARO) || defined(USE_GPS)
     case OSD_VARIO:
         {
