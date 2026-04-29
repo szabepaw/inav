@@ -158,43 +158,35 @@ bool cameraControlSendCommand(cameraControlCommand_e command)
         return false;
     }
 
+    bool success = false;
+    state.i2cRetryCount = 0;
+
+#ifndef SITL_BUILD
     const cameraControlConfig_t *config = cameraControlConfig();
     uint8_t cmdByte = (uint8_t)command;
-    bool success = false;
-
-    state.i2cRetryCount = 0;
 
     for (int attempt = 0; attempt <= CAMERA_CONTROL_I2C_MAX_RETRIES; attempt++) {
         if (attempt > 0) {
-            // Odczekaj przed kolejną próbą
             delay(CAMERA_CONTROL_I2C_RETRY_DELAY_MS);
         }
-
-        // Wyślij pojedynczy bajt polecenia przez I2C
         // i2cWriteBuffer(device, addr, reg, len, data, allowRawAccess)
-        // reg=0xFF oznacza brak rejestru (raw access) — używamy allowRawAccess=true
-#ifndef SITL_BUILD
+        // reg=0xFF + allowRawAccess=true = wyślij surowy bajt bez rejestru
         if (i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0xFF, 1, &cmdByte, true)) {
             success = true;
             break;
         }
-#else
-        // SITL: brak sprzętowego I2C — symuluj sukces
-        success = true;
-        break;
-#endif
-
         state.i2cRetryCount++;
     }
+#else
+    // SITL: brak sprzętowego I2C — symuluj sukces
+    UNUSED(command);
+    success = true;
+#endif
 
     if (success) {
-        // Zaktualizuj stan i flagę OSD
         state.lastCommandedState = (command == CAMERA_CONTROL_COMMAND_RECORD);
         cameraControlUpdateOSD(state.lastCommandedState);
     }
-    // Przy 3 nieudanych próbach błąd jest rejestrowany przez warstwę I2C INAV.
-    // Rozszerzone logowanie diagnostyczne może być dodane tutaj gdy dostępne
-    // będzie API loggera (np. LOG_E(CAMERA_CONTROL, ...)).
 
     return success;
 }
