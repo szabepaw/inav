@@ -97,9 +97,10 @@
 
 #include "config/feature.h"
 
+#include "fc/camera_control.h"
+
 #if defined(SITL_BUILD)
 #include "target/SITL/serial_proxy.h"
-#include "fc/camera_control.h"
 #endif
 
 void taskHandleSerial(timeUs_t currentTimeUs)
