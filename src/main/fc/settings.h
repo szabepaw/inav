@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef USE_CAMERA_CONTROL
+#include "fc/camera_control.h"
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
