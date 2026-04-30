@@ -4513,8 +4513,8 @@ groups:
     condition: USE_CAMERA_CONTROL
     members:
       - name: camera_i2c_address
-        description: "I2C address of the Blackmagic SDI Shield (0x08-0x77, decimal)"
-        default_value: 16
+        description: "I2C address of the Blackmagic SDI Shield (default 0x6E=110, set by jumpers)"
+        default_value: 110
         field: i2cAddress
         min: 8
         max: 119

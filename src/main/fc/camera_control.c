@@ -2,7 +2,19 @@
  * camera_control.c
  *
  * Module for remote camera recording control via RC switch and I2C.
- * Sends single-byte commands to Blackmagic 3G SDI Shield over I2C bus.
+ * Communicates DIRECTLY with Blackmagic 3G SDI Shield over I2C bus
+ * using the shield's register protocol — no Arduino intermediary needed.
+ *
+ * SDI Shield I2C register protocol (address 0x6E by default):
+ *   Each I2C write: [reg_addr_low] [reg_addr_high] [data...]
+ *
+ *   0x1000 (CONTROL)  — bit 0: camera control override enable
+ *   0x2001 (OCLENGTH) — outgoing camera control packet length
+ *   0x2100 (OCDATA)   — outgoing camera control packet data (up to 255 bytes)
+ *
+ * SDI Camera Control packet (Blackmagic protocol v1.6.2):
+ *   [dest=0xFF][len=5][cmd=0][0x00][cat=10][par=1][type=1][op=0][mode][pad][pad][pad]
+ *   mode 0 = Preview/Stop, mode 2 = Record
  *
  * Feature: rc-blackmagic-camera-control
  * Requirements: 2.3, 5.4, 5.5, 6.2
@@ -28,15 +40,42 @@
 #define CAMERA_CONTROL_I2C_RETRY_DELAY_MS 10
 
 /* ---------------------------------------------------------------------------
+ * SDI Shield register addresses (from BMDSDIControlShieldRegisters.h)
+ * ---------------------------------------------------------------------------*/
+#define SDI_REG_CONTROL   0x1000  // Control register (bit 0 = camera override)
+#define SDI_REG_OCLENGTH  0x2001  // Outgoing camera control packet length
+#define SDI_REG_OCDATA    0x2100  // Outgoing camera control packet data
+
+#define SDI_CONTROL_COVERIDE_MASK  0x01  // Camera control override bit
+
+/* ---------------------------------------------------------------------------
+ * SDI Camera Control packet constants
+ * Blackmagic SDI Camera Control Protocol v1.6.2
+ * Category 10 (Media), Parameter 1 (Transport mode)
+ * ---------------------------------------------------------------------------*/
+#define SDI_CAMERA_BROADCAST  0xFF  // Destination: all cameras
+#define SDI_PAYLOAD_LENGTH    5     // Bytes 4-8 = 5 bytes of payload
+#define SDI_CMD_CHANGE_CONFIG 0x00  // Command: change configuration
+#define SDI_CATEGORY_MEDIA    10    // Category: Media
+#define SDI_PARAM_TRANSPORT   1     // Parameter: Transport mode
+#define SDI_TYPE_INT8         1     // Data type: signed byte
+#define SDI_OP_ASSIGN         0     // Operation: assign value
+#define SDI_TRANSPORT_PREVIEW 0     // mode=0: Preview/Stop
+#define SDI_TRANSPORT_RECORD  2     // mode=2: Record
+#define SDI_PACKET_LENGTH     12    // Total packet length (padded to 32-bit)
+
+/* ---------------------------------------------------------------------------
  * Persistent configuration — registered in INAV EEPROM via PG system.
  *
  * PG_CAMERA_CONTROL_CONFIG = 1045  (defined in src/main/config/parameter_group_ids.h)
+ *
+ * i2cAddress: SDI Shield I2C address (default 0x6E — set by jumpers on shield)
  * ---------------------------------------------------------------------------*/
 PG_REGISTER_WITH_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
                                 PG_CAMERA_CONTROL_CONFIG, 0);
 
 PG_RESET_TEMPLATE(cameraControlConfig_t, cameraControlConfig,
-    .i2cAddress  = 0x10,
+    .i2cAddress  = 0x6E,   // Default SDI Shield I2C address (jumper-set)
     .rcChannel   = 6,
     .rcThreshold = 1700,
     .debounceMs  = 200,
@@ -163,22 +202,70 @@ bool cameraControlSendCommand(cameraControlCommand_e command)
 
 #ifndef SITL_BUILD
     const cameraControlConfig_t *config = cameraControlConfig();
-    uint8_t cmdByte = (uint8_t)command;
+
+    // Build 12-byte SDI Camera Control packet
+    // Blackmagic SDI Camera Control Protocol v1.6.2
+    // Category 10 (Media), Parameter 1 (Transport mode)
+    const int8_t transportMode = (command == CAMERA_CONTROL_COMMAND_RECORD)
+        ? SDI_TRANSPORT_RECORD
+        : SDI_TRANSPORT_PREVIEW;
+
+    uint8_t packet[SDI_PACKET_LENGTH] = {
+        SDI_CAMERA_BROADCAST,   // [0] Destination: broadcast
+        SDI_PAYLOAD_LENGTH,     // [1] Payload length
+        SDI_CMD_CHANGE_CONFIG,  // [2] Command: change configuration
+        0x00,                   // [3] Reserved
+        SDI_CATEGORY_MEDIA,     // [4] Category: 10 (Media)
+        SDI_PARAM_TRANSPORT,    // [5] Parameter: 1 (Transport mode)
+        SDI_TYPE_INT8,          // [6] Data type: 1 (signed byte)
+        SDI_OP_ASSIGN,          // [7] Operation: 0 (assign)
+        (uint8_t)transportMode, // [8] Data[0]: transport mode
+        0x00,                   // [9]  Padding
+        0x00,                   // [10] Padding
+        0x00,                   // [11] Padding
+    };
 
     for (int attempt = 0; attempt <= CAMERA_CONTROL_I2C_MAX_RETRIES; attempt++) {
         if (attempt > 0) {
             delay(CAMERA_CONTROL_I2C_RETRY_DELAY_MS);
         }
-        // i2cWriteBuffer(device, addr, reg, len, data, allowRawAccess)
-        // reg=0xFF + allowRawAccess=true = wyślij surowy bajt bez rejestru
-        if (i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0xFF, 1, &cmdByte, true)) {
-            success = true;
-            break;
+
+        // Step 1: Enable camera control override
+        // Write 0x01 to register 0x1000 (CONTROL)
+        // I2C format: [reg_low=0x00] [reg_high=0x10] [value=0x01]
+        uint8_t controlVal = SDI_CONTROL_COVERIDE_MASK;
+        if (!i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0x00, 2,
+                            (uint8_t[]){0x10, controlVal}, false)) {
+            state.i2cRetryCount++;
+            continue;
         }
-        state.i2cRetryCount++;
+
+        // Step 2: Write packet length to register 0x2001 (OCLENGTH)
+        // I2C format: [reg_low=0x01] [reg_high=0x20] [length=12]
+        uint8_t lenData[3] = {0x01, 0x20, SDI_PACKET_LENGTH};
+        if (!i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0xFF, 3,
+                            lenData, true)) {
+            state.i2cRetryCount++;
+            continue;
+        }
+
+        // Step 3: Write packet data to register 0x2100 (OCDATA)
+        // I2C format: [reg_low=0x00] [reg_high=0x21] [12 bytes of packet]
+        uint8_t dataMsg[2 + SDI_PACKET_LENGTH];
+        dataMsg[0] = 0x00;  // reg_low
+        dataMsg[1] = 0x21;  // reg_high
+        memcpy(&dataMsg[2], packet, SDI_PACKET_LENGTH);
+        if (!i2cWriteBuffer(I2CDEV_1, config->i2cAddress, 0xFF,
+                            2 + SDI_PACKET_LENGTH, dataMsg, true)) {
+            state.i2cRetryCount++;
+            continue;
+        }
+
+        success = true;
+        break;
     }
 #else
-    // SITL: brak sprzętowego I2C — symuluj sukces
+    // SITL: no hardware I2C — simulate success
     (void)command;
     success = true;
 #endif
