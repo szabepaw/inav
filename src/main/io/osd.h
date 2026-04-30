@@ -340,6 +340,7 @@ typedef enum {
     OSD_NAV_FW_ALT_CONTROL_RESPONSE,
     OSD_NAV_MIN_GROUND_SPEED,
     OSD_THROTTLE_GAUGE,
+    OSD_CAMERA_RECORD_INDICATOR,    // Blackmagic camera recording status indicator ("REC ON")
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

@@ -141,6 +141,8 @@ typedef enum {
     TASK_GEOZONE,
 #endif
 
+    TASK_CAMERA_CONTROL,    // Blackmagic camera recording control
+
     /* Count of real tasks */
     TASK_COUNT,
 

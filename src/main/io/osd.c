@@ -123,6 +123,7 @@
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
 #endif
+#include "fc/camera_control.h"
 
 #define VIDEO_BUFFER_CHARS_PAL    480
 #define VIDEO_BUFFER_CHARS_HDZERO 900
@@ -260,6 +261,7 @@ bool osdIsNotMetric(void) {
  * prefixed by a a symbol to indicate the unit used.
  * @param dist Distance in centimeters
  */
+
 static void osdFormatDistanceSymbol(char *buff, int32_t dist, uint8_t decimals, uint8_t digits)
 {
     if (digits == 0)    // Total number of digits (including decimal point)
@@ -3027,6 +3029,18 @@ static bool osdDrawSingleElement(uint8_t item)
     {
         bool useScaled = navigationIsControllingThrottle();
         osdThrottleGauge(osdDisplayPort, osdGetDisplayPortCanvas(), OSD_DRAW_POINT_GRID(elemPosX, elemPosY), getThrottlePercent(useScaled));
+        return true;
+    }
+
+
+    case OSD_CAMERA_RECORD_INDICATOR:
+    {
+        // Feature: rc-blackmagic-camera-control
+        // Requirements: 8.1, 8.2, 8.4
+        if (cameraRecordActive) {
+            tfp_sprintf(buff, "REC ON");
+            displayWriteWithAttr(osdDisplayPort, elemPosX, elemPosY, buff, TEXT_ATTRIBUTES_NONE);
+        }
         return true;
     }
 
