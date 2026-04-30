@@ -262,18 +262,6 @@ bool osdIsNotMetric(void) {
  * @param dist Distance in centimeters
  */
 
-#ifdef USE_CAMERA_CONTROL
-static void osdElementCameraRecordIndicator(osdElementParms_t *element)
-{
-    // Feature: rc-blackmagic-camera-control
-    // Requirements: 8.1, 8.2, 8.4
-    if (cameraRecordActive) {
-        tfp_sprintf(element->buff, "REC ON");
-        element->attr = TEXT_ATTRIBUTES_NONE;
-    }
-}
-#endif
-
 static void osdFormatDistanceSymbol(char *buff, int32_t dist, uint8_t decimals, uint8_t digits)
 {
     if (digits == 0)    // Total number of digits (including decimal point)
