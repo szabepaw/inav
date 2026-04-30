@@ -54,6 +54,7 @@
 #define I2C1_SCL                        PB8
 #define I2C1_SDA                        PB9
 #define DEFAULT_I2C_BUS                 BUS_I2C1
+#define USE_CAMERA_CONTROL
 
 #else
 
