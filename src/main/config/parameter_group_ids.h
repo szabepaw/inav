@@ -134,6 +134,10 @@
 #define PG_GEOZONE_VERTICES 1044
 #define PG_INAV_END PG_GEOZONE_VERTICES
 #define PG_CAMERA_CONTROL_CONFIG    1045
+
+#ifdef USE_CAMERA_CONTROL
+#include "fc/camera_control.h"
+#endif
 // OSD configuration (subject to change)
 //#define PG_OSD_FONT_CONFIG 2047
 //#define PG_OSD_VIDEO_CONFIG 2046

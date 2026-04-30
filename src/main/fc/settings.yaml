@@ -4509,7 +4509,6 @@ groups:
         type: uint8_t
   - name: PG_CAMERA_CONTROL_CONFIG
     type: camera_control_config_t
-    headers: ["fc/camera_control.h"]
     condition: USE_CAMERA_CONTROL
     members:
       - name: camera_i2c_address
