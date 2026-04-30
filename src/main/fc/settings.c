@@ -12,6 +12,9 @@
 
 #include "config/general_settings.h"
 #include "flight/rpm_filter.h"
+#ifdef USE_CAMERA_CONTROL
+#include "fc/camera_control.h"
+#endif
 #include "settings_generated.c"
 
 static bool settingGetWord(char *buf, int idx)
